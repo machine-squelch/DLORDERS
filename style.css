@@ -417,12 +417,50 @@ body::before {
     transform: rotate(2deg) scale(1.02);
     box-shadow: var(--shadow-xl);
     z-index: 1000;
+    opacity: 0.8;
 }
 
 .kanban-item.touch-dragging {
-    opacity: 0.8;
+    opacity: 0.9;
     transform: scale(1.05);
     z-index: 1000;
+    background: rgba(16, 185, 129, 0.2);
+    border-color: var(--ready-to-pick);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+}
+
+/* Improved drop zone feedback */
+.item-list.drag-over {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px dashed var(--ready-to-pick);
+    border-radius: 8px;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+/* Better mobile touch targets */
+@media (max-width: 768px) {
+    .kanban-item {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        min-height: 60px;
+        touch-action: none; /* Prevent scrolling during drag */
+    }
+    
+    .kanban-item:active,
+    .kanban-item.dragging,
+    .kanban-item.touch-dragging {
+        transform: scale(1.08);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .item-delete-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+        top: 8px;
+        right: 8px;
+    }
 }
 
 /* Placeholder */
