@@ -172,7 +172,7 @@ body::before {
 
 .logo-centered {
     width: auto;
-    height: clamp(60px, 8vh, 100px);
+    height: auto;
     margin: 0 auto;
     display: block;
     object-fit: contain;
