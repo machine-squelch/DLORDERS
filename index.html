@@ -10,6 +10,24 @@
     <link rel="stylesheet" href="style.css">
     <meta name="description" content="Professional Kanban board for agricultural supply tracking and workflow management">
     <meta name="theme-color" content="#1e293b">
+    
+    <!-- Digital Ocean Debug Script -->
+    <script>
+        console.log('DL Order Tracker - Loading...');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            // Ensure app loads even if there are timing issues
+            setTimeout(function() {
+                const appContainer = document.getElementById('app-container');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (appContainer && loadingIndicator) {
+                    console.log('Showing app container');
+                    appContainer.style.display = 'flex';
+                    loadingIndicator.style.display = 'none';
+                }
+            }, 100);
+        });
+    </script>
 </head>
 <body>
     <!-- Loading indicator -->
