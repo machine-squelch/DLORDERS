@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>DL Order Tracker</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="shortcut icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Professional Kanban board for agricultural supply tracking and workflow management">
+    <meta name="theme-color" content="#1e293b">
+</head>
+<body>
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="loading-indicator">
+        <div class="loading-spinner"></div>
+        <p>Loading DL Order Tracker...</p>
+    </div>
+
+    <!-- Main app container -->
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Header Section -->
+        <header class="header-section">
+            <img src="dl-wholesale-logo.png" alt="DL Wholesale" class="logo-centered">
+            <div class="header-actions">
+                <button id="clear-board-btn" class="action-btn clear-btn" title="Clear all orders">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Clear</span>
+                </button>
+                <button id="export-btn" class="action-btn export-btn" title="Export data">
+                    <span class="btn-icon">📤</span>
+                    <span class="btn-text">Export</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Kanban Board Container -->
+        <main class="kanban-container">
+            <div class="kanban-board" id="kanban-board">
+                <!-- Ready to Pick Column -->
+                <div class="kanban-column ready-to-pick-column" data-column="0">
+                    <header class="column-header">
+                        <h2 class="column-title">
+                            <span class="column-icon">📋</span>
+                            <span class="column-text">Ready to Pick</span>
+                            <span class="item-count" id="count-0">0</span>
+                        </h2>
+                    </header>
+                    
+                    <div class="column-content" id="column-content-0">
+                        <ul class="item-list" 
+                            id="item-list-0" 
+                            data-column="0"
+                            role="list"
+                            aria-label="Ready to Pick orders">
+                        </ul>
+                    </div>
+                    
+                    <footer class="column-footer">
+                        <button class="add-item-btn" data-column="0" aria-label="Add new order to Ready to Pick">
+                            <span class="plus-icon">+</span>
+                            <span>Add Order</span>
+                        </button>
+                        <div class="add-item-form" id="add-form-0" style="display: none;">
+                            <textarea 
+                                class="add-item-input" 
+                                id="add-input-0"
+                                placeholder="Supply Order #AG-12345 - Product Description"
+                                rows="2"
+                                aria-label="Enter supply order details"></textarea>
+                            <div class="form-actions">
+                                <button class="save-btn" data-column="0">Save</button>
+                                <button class="cancel-btn" data-column="0">Cancel</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- Warehouse Column -->
+                <div class="kanban-column warehouse-column" data-column="1">
+                    <header class="column-header">
+                        <h2 class="column-title">
+                            <span class="column-icon">🏭</span>
+                            <span class="column-text">Warehouse</span>
+                            <span class="item-count" id="count-1">0</span>
+                        </h2>
+                    </header>
+                    
+                    <div class="column-content" id="column-content-1">
+                        <ul class="item-list" 
+                            id="item-list-1" 
+                            data-column="1"
+                            role="list"
+                            aria-label="Warehouse orders">
+                        </ul>
+                    </div>
+                    
+                    <footer class="column-footer">
+                        <button class="add-item-btn" data-column="1" aria-label="Add new order to Warehouse">
+                            <span class="plus-icon">+</span>
+                            <span>Add Order</span>
+                        </button>
+                        <div class="add-item-form" id="add-form-1" style="display: none;">
+                            <textarea 
+                                class="add-item-input" 
+                                id="add-input-1"
+                                placeholder="Supply Order #AG-12345 - Product Description"
+                                rows="2"
+                                aria-label="Enter supply order details"></textarea>
+                            <div class="form-actions">
+                                <button class="save-btn" data-column="1">Save</button>
+                                <button class="cancel-btn" data-column="1">Cancel</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- Built Column -->
+                <div class="kanban-column built-column" data-column="2">
+                    <header class="column-header">
+                        <h2 class="column-title">
+                            <span class="column-icon">✅</span>
+                            <span class="column-text">Built</span>
+                            <span class="item-count" id="count-2">0</span>
+                        </h2>
+                    </header>
+                    
+                    <div class="column-content" id="column-content-2">
+                        <ul class="item-list" 
+                            id="item-list-2" 
+                            data-column="2"
+                            role="list"
+                            aria-label="Built orders">
+                        </ul>
+                    </div>
+                    
+                    <footer class="column-footer">
+                        <button class="add-item-btn" data-column="2" aria-label="Add new order to Built">
+                            <span class="plus-icon">+</span>
+                            <span>Add Order</span>
+                        </button>
+                        <div class="add-item-form" id="add-form-2" style="display: none;">
+                            <textarea 
+                                class="add-item-input" 
+                                id="add-input-2"
+                                placeholder="Supply Order #AG-12345 - Product Description"
+                                rows="2"
+                                aria-label="Enter supply order details"></textarea>
+                            <div class="form-actions">
+                                <button class="save-btn" data-column="2">Save</button>
+                                <button class="cancel-btn" data-column="2">Cancel</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- Carrier Booked Column -->
+                <div class="kanban-column carrier-booked-column" data-column="3">
+                    <header class="column-header">
+                        <h2 class="column-title">
+                            <span class="column-icon">🚚</span>
+                            <span class="column-text">Carrier Booked</span>
+                            <span class="item-count" id="count-3">0</span>
+                        </h2>
+                    </header>
+                    
+                    <div class="column-content" id="column-content-3">
+                        <ul class="item-list" 
+                            id="item-list-3" 
+                            data-column="3"
+                            role="list"
+                            aria-label="Carrier Booked orders">
+                        </ul>
+                    </div>
+                    
+                    <footer class="column-footer">
+                        <button class="add-item-btn" data-column="3" aria-label="Add new order to Carrier Booked">
+                            <span class="plus-icon">+</span>
+                            <span>Add Order</span>
+                        </button>
+                        <div class="add-item-form" id="add-form-3" style="display: none;">
+                            <textarea 
+                                class="add-item-input" 
+                                id="add-input-3"
+                                placeholder="Supply Order #AG-12345 - Product Description"
+                                rows="2"
+                                aria-label="Enter supply order details"></textarea>
+                            <div class="form-actions">
+                                <button class="save-btn" data-column="3">Save</button>
+                                <button class="cancel-btn" data-column="3">Cancel</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- Ready for Pickup Column -->
+                <div class="kanban-column ready-pickup-column" data-column="4">
+                    <header class="column-header">
+                        <h2 class="column-title">
+                            <span class="column-icon">📦</span>
+                            <span class="column-text">Ready for Pickup</span>
+                            <span class="item-count" id="count-4">0</span>
+                        </h2>
+                    </header>
+                    
+                    <div class="column-content" id="column-content-4">
+                        <ul class="item-list" 
+                            id="item-list-4" 
+                            data-column="4"
+                            role="list"
+                            aria-label="Ready for Pickup orders">
+                        </ul>
+                    </div>
+                    
+                    <footer class="column-footer">
+                        <button class="add-item-btn" data-column="4" aria-label="Add new order to Ready for Pickup">
+                            <span class="plus-icon">+</span>
+                            <span>Add Order</span>
+                        </button>
+                        <div class="add-item-form" id="add-form-4" style="display: none;">
+                            <textarea 
+                                class="add-item-input" 
+                                id="add-input-4"
+                                placeholder="Supply Order #AG-12345 - Product Description"
+                                rows="2"
+                                aria-label="Enter order details"></textarea>
+                            <div class="form-actions">
+                                <button class="save-btn" data-column="4">Save</button>
+                                <button class="cancel-btn" data-column="4">Cancel</button>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
+
