@@ -1,10 +1,9 @@
 /**
- * BULLETPROOF KANBAN DRAG & DROP v2.0
- * Expert-level implementation with zero intermittent issues
- * Cross-platform compatibility: PC, Mac, iOS, Android
+ * Enhanced Kanban Board with Mobile Support and Improved Drag & Drop
+ * Fixes timing issues and adds touch support for mobile devices
  */
 
-class BulletproofKanban {
+class KanbanBoard {
     constructor() {
         this.columns = [
             { id: 0, name: 'readyToPick', title: 'Ready to Pick', items: [] },
@@ -14,131 +13,573 @@ class BulletproofKanban {
             { id: 4, name: 'readyPickup', title: 'Ready for Pickup', items: [] }
         ];
         
-        this.itemIdCounter = 0;
-        this.isDragging = false;
-        this.draggedItem = null;
-        this.draggedElement = null;
-        this.sourceColumn = null;
-        this.isMobile = this.detectMobile();
-        this.touchStartTime = 0;
-        this.touchMoved = false;
-        
-        // Enhanced mobile detection
-        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
-        // Bulletproof event prevention
-        this.preventDefaults = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        this.dragState = {
+            isDragging: false,
+            draggedElement: null,
+            draggedFromColumn: null,
+            draggedItemId: null,
+            placeholder: null,
+            touchStartY: 0,
+            touchStartX: 0,
+            lastTouchY: 0,
+            lastTouchX: 0
         };
         
-        console.log('Bulletproof Kanban v2.0 initializing...');
+        this.itemIdCounter = 0;
+        this.isInitialized = false;
+        
         this.init();
     }
     
-    detectMobile() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || 
-               ('ontouchstart' in window) || 
-               (navigator.maxTouchPoints > 0) ||
-               window.innerWidth <= 768;
-    }
-    
-    init() {
-        this.loadFromStorage();
-        this.setupEventListeners();
-        this.render();
-        this.hideLoading();
-        console.log('Bulletproof Kanban initialized - Mobile:', this.isMobile, 'Touch:', this.isTouchDevice);
+    async init() {
+        try {
+            await this.loadFromStorage();
+            this.setupEventListeners();
+            this.render();
+            this.hideLoading();
+            this.showWelcomeMessage();
+            this.isInitialized = true;
+        } catch (error) {
+            console.error('Failed to initialize Kanban board:', error);
+            this.showToast('Failed to load board. Please refresh the page.', 'error');
+        }
     }
     
     hideLoading() {
         const loadingIndicator = document.getElementById('loading-indicator');
         const appContainer = document.getElementById('app-container');
         
-        if (loadingIndicator && appContainer) {
+        setTimeout(() => {
             loadingIndicator.style.display = 'none';
-            appContainer.style.display = 'flex';
-        }
+            appContainer.style.display = 'block';
+            appContainer.style.opacity = '0';
+            appContainer.style.transition = 'opacity 0.3s ease';
+            
+            requestAnimationFrame(() => {
+                appContainer.style.opacity = '1';
+            });
+        }, 500);
+    }
+    
+    showWelcomeMessage() {
+        // Welcome popup disabled per user request
+        return;
+    }
+    
+    loadSampleData() {
+        this.columns[0].items = [
+            { id: this.generateId(), text: "Supply Order #AG-1001 - Premium Nutrients", timestamp: Date.now() },
+            { id: this.generateId(), text: "Supply Order #AG-1002 - Growing Medium", timestamp: Date.now() },
+            { id: this.generateId(), text: "Supply Order #AG-1003 - LED Lighting Systems", timestamp: Date.now() }
+        ];
+        
+        this.columns[1].items = [
+            { id: this.generateId(), text: "Supply Order #AG-0998 - Irrigation Equipment", timestamp: Date.now() },
+            { id: this.generateId(), text: "Supply Order #AG-0999 - Climate Control Units", timestamp: Date.now() }
+        ];
+        
+        this.columns[2].items = [
+            { id: this.generateId(), text: "Supply Order #AG-0995 - Ventilation Systems", timestamp: Date.now() },
+            { id: this.generateId(), text: "Supply Order #AG-0996 - pH Testing Kits", timestamp: Date.now() }
+        ];
+        
+        this.columns[3].items = [
+            { id: this.generateId(), text: "Supply Order #AG-0993 - Organic Fertilizers", timestamp: Date.now() }
+        ];
+        
+        this.columns[4].items = [
+            { id: this.generateId(), text: "Supply Order #AG-0991 - Harvest Equipment", timestamp: Date.now() },
+            { id: this.generateId(), text: "Supply Order #AG-0992 - Storage Containers", timestamp: Date.now() }
+        ];
+        
+        this.saveToStorage();
+        this.render();
+    }
+    
+    generateId() {
+        return ++this.itemIdCounter;
     }
     
     setupEventListeners() {
-        // Add order buttons
+        // Add item buttons
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('add-item-btn') || e.target.closest('.add-item-btn')) {
-                const btn = e.target.classList.contains('add-item-btn') ? e.target : e.target.closest('.add-item-btn');
-                const columnId = parseInt(btn.dataset.column);
-                this.showAddForm(columnId);
+            if (e.target.closest('.add-item-btn')) {
+                const column = parseInt(e.target.closest('.add-item-btn').dataset.column);
+                this.showAddForm(column);
             }
             
-            if (e.target.classList.contains('save-btn')) {
-                const columnId = parseInt(e.target.dataset.column);
-                this.saveNewItem(columnId);
+            if (e.target.closest('.save-btn')) {
+                const column = parseInt(e.target.closest('.save-btn').dataset.column);
+                this.saveNewItem(column);
             }
             
-            if (e.target.classList.contains('cancel-btn')) {
-                const columnId = parseInt(e.target.dataset.column);
-                this.hideAddForm(columnId);
+            if (e.target.closest('.cancel-btn')) {
+                const column = parseInt(e.target.closest('.cancel-btn').dataset.column);
+                this.hideAddForm(column);
             }
             
-            if (e.target.classList.contains('item-delete-btn')) {
-                const itemId = parseInt(e.target.dataset.itemId);
-                const columnId = parseInt(e.target.dataset.column);
-                this.deleteItem(columnId, itemId);
-            }
-            
-            if (e.target.classList.contains('clear-btn') || e.target.closest('.clear-btn')) {
+            if (e.target.closest('.clear-btn')) {
                 this.clearBoard();
             }
             
-            if (e.target.classList.contains('export-btn') || e.target.closest('.export-btn')) {
+            if (e.target.closest('.export-btn')) {
                 this.exportData();
             }
+            
+            if (e.target.closest('.item-delete-btn')) {
+                const itemElement = e.target.closest('.kanban-item');
+                const itemId = parseInt(itemElement.dataset.itemId);
+                const column = parseInt(itemElement.closest('.kanban-column').dataset.column);
+                this.deleteItem(column, itemId);
+            }
         });
         
-        // Enhanced keyboard support
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                // Cancel any active forms
-                document.querySelectorAll('.add-item-form').forEach(form => {
-                    form.style.display = 'none';
-                });
-                document.querySelectorAll('.add-item-btn').forEach(btn => {
-                    btn.style.display = 'flex';
-                });
+                this.hideAllAddForms();
+            }
+            
+            // Ctrl/Cmd + Enter to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                const activeInput = document.activeElement;
+                if (activeInput && activeInput.classList.contains('add-item-input')) {
+                    const column = parseInt(activeInput.id.split('-')[2]);
+                    this.saveNewItem(column);
+                }
             }
         });
         
-        // Enhanced input handling
-        document.addEventListener('keypress', (e) => {
-            if (e.target.classList.contains('add-item-input') && e.key === 'Enter' && e.ctrlKey) {
-                const columnId = parseInt(e.target.id.split('-')[2]);
-                this.saveNewItem(columnId);
+        // Input event listeners
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('add-item-input')) {
+                this.autoResizeTextarea(e.target);
             }
+            
+            if (e.target.classList.contains('kanban-item-text')) {
+                this.handleItemEdit(e.target);
+            }
+        });
+        
+        // Setup drag and drop with improved timing
+        this.setupDragAndDrop();
+        
+        // Setup touch events for mobile
+        this.setupTouchEvents();
+        
+        // Window resize handler for responsive design
+        window.addEventListener('resize', this.debounce(() => {
+            this.handleResize();
+        }, 250));
+    }
+    
+    setupDragAndDrop() {
+        const board = document.getElementById('kanban-board');
+        
+        // Use event delegation for better performance
+        board.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('kanban-item')) {
+                this.handleDragStart(e);
+            }
+        });
+        
+        board.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('kanban-item')) {
+                this.handleDragEnd(e);
+            }
+        });
+        
+        board.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this.handleDragOver(e);
+        });
+        
+        board.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.handleDrop(e);
+        });
+        
+        board.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            this.handleDragEnter(e);
+        });
+        
+        board.addEventListener('dragleave', (e) => {
+            this.handleDragLeave(e);
         });
     }
     
-    showAddForm(columnId) {
-        const button = document.querySelector(`button[data-column="${columnId}"].add-item-btn`);
-        const form = document.getElementById(`add-form-${columnId}`);
-        const input = document.getElementById(`add-input-${columnId}`);
+    setupTouchEvents() {
+        const board = document.getElementById('kanban-board');
         
-        if (button && form && input) {
-            button.style.display = 'none';
-            form.style.display = 'block';
-            input.focus();
+        board.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.kanban-item')) {
+                this.handleTouchStart(e);
+            }
+        }, { passive: false });
+        
+        board.addEventListener('touchmove', (e) => {
+            if (this.dragState.isDragging) {
+                this.handleTouchMove(e);
+            }
+        }, { passive: false });
+        
+        board.addEventListener('touchend', (e) => {
+            if (this.dragState.isDragging) {
+                this.handleTouchEnd(e);
+            }
+        }, { passive: false });
+    }
+    
+    handleDragStart(e) {
+        const item = e.target;
+        const column = item.closest('.kanban-column');
+        
+        this.dragState.isDragging = true;
+        this.dragState.draggedElement = item;
+        this.dragState.draggedFromColumn = parseInt(column.dataset.column);
+        this.dragState.draggedItemId = parseInt(item.dataset.itemId);
+        
+        // Add dragging class with slight delay to avoid flickering
+        setTimeout(() => {
+            if (this.dragState.isDragging) {
+                item.classList.add('dragging');
+                document.body.classList.add('dragging-active');
+            }
+        }, 50);
+        
+        // Set drag data
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', item.outerHTML);
+        
+        // Create placeholder
+        this.createPlaceholder();
+    }
+    
+    handleDragEnd(e) {
+        const item = e.target;
+        
+        // Clean up drag state
+        item.classList.remove('dragging');
+        document.body.classList.remove('dragging-active');
+        
+        // Remove all drop zone indicators
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over', 'drag-target');
+        });
+        
+        // Remove placeholder
+        this.removePlaceholder();
+        
+        // Reset drag state with longer delay to prevent timing issues
+        setTimeout(() => {
+            this.resetDragState();
+        }, 200);
+    }
+    
+    handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!this.dragState.isDragging) return;
+        
+        const column = e.target.closest('.kanban-column');
+        if (!column) return;
+        
+        // Improved boundary detection - check if we're within the column bounds
+        const columnRect = column.getBoundingClientRect();
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        // Add some padding to make it easier to drop in columns
+        const padding = 20;
+        if (mouseX < columnRect.left - padding || 
+            mouseX > columnRect.right + padding || 
+            mouseY < columnRect.top - padding || 
+            mouseY > columnRect.bottom + padding) {
+            return;
+        }
+        
+        const itemList = column.querySelector('.item-list');
+        const afterElement = this.getDragAfterElement(itemList, mouseY);
+        
+        if (afterElement == null) {
+            itemList.appendChild(this.dragState.placeholder);
+        } else {
+            itemList.insertBefore(this.dragState.placeholder, afterElement);
         }
     }
     
-    hideAddForm(columnId) {
-        const button = document.querySelector(`button[data-column="${columnId}"].add-item-btn`);
+    handleDragEnter(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const column = e.target.closest('.kanban-column');
+        if (column && this.dragState.isDragging) {
+            // Remove drag-over from all columns first
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            column.classList.add('drag-over');
+        }
+    }
+    
+    handleDragLeave(e) {
+        const column = e.target.closest('.kanban-column');
+        if (column) {
+            // Only remove drag-over if we're actually leaving the column
+            const rect = column.getBoundingClientRect();
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                column.classList.remove('drag-over');
+            }
+        }
+    }
+    
+    handleDrop(e) {
+        e.preventDefault();
+        
+        const targetColumn = e.target.closest('.kanban-column');
+        if (!targetColumn || !this.dragState.isDragging) return;
+        
+        const targetColumnId = parseInt(targetColumn.dataset.column);
+        const sourceColumnId = this.dragState.draggedFromColumn;
+        const itemId = this.dragState.draggedItemId;
+        
+        // Find the item in source column
+        const sourceColumn = this.columns[sourceColumnId];
+        const itemIndex = sourceColumn.items.findIndex(item => item.id === itemId);
+        
+        if (itemIndex === -1) return;
+        
+        const item = sourceColumn.items[itemIndex];
+        
+        // Remove from source column
+        sourceColumn.items.splice(itemIndex, 1);
+        
+        // Add to target column at the correct position
+        const placeholder = this.dragState.placeholder;
+        const targetList = targetColumn.querySelector('.item-list');
+        const placeholderIndex = Array.from(targetList.children).indexOf(placeholder);
+        
+        if (placeholderIndex === -1) {
+            this.columns[targetColumnId].items.push(item);
+        } else {
+            this.columns[targetColumnId].items.splice(placeholderIndex, 0, item);
+        }
+        
+        // Update timestamp
+        item.timestamp = Date.now();
+        
+        // Save and re-render
+        this.saveToStorage();
+        this.render();
+        
+        // Show success message
+        if (sourceColumnId !== targetColumnId) {
+            this.showToast(`Order moved to ${this.columns[targetColumnId].title}`, 'success');
+        }
+        
+        // Clean up
+        targetColumn.classList.remove('drag-over');
+    }
+    
+    // Touch event handlers for mobile support
+    handleTouchStart(e) {
+        const item = e.target.closest('.kanban-item');
+        if (!item) return;
+        
+        const touch = e.touches[0];
+        this.dragState.touchStartX = touch.clientX;
+        this.dragState.touchStartY = touch.clientY;
+        this.dragState.lastTouchX = touch.clientX;
+        this.dragState.lastTouchY = touch.clientY;
+        
+        // Start drag after a longer delay to distinguish from scroll and reduce sensitivity
+        this.dragState.touchStartTimeout = setTimeout(() => {
+            this.startTouchDrag(item, e);
+        }, 300);
+    }
+    
+    startTouchDrag(item, e) {
+        const column = item.closest('.kanban-column');
+        
+        this.dragState.isDragging = true;
+        this.dragState.draggedElement = item;
+        this.dragState.draggedFromColumn = parseInt(column.dataset.column);
+        this.dragState.draggedItemId = parseInt(item.dataset.itemId);
+        
+        item.classList.add('touch-dragging');
+        document.body.classList.add('touch-dragging-active');
+        
+        this.createPlaceholder();
+        this.showToast('Drag to move order', 'info', 2000);
+        
+        // Prevent scrolling while dragging
+        document.body.style.overflow = 'hidden';
+    }
+    
+    handleTouchMove(e) {
+        if (!this.dragState.isDragging) {
+            // Clear timeout if user starts scrolling before drag starts
+            clearTimeout(this.dragState.touchStartTimeout);
+            return;
+        }
+        
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        this.dragState.lastTouchX = touch.clientX;
+        this.dragState.lastTouchY = touch.clientY;
+        
+        // Find element under touch point
+        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetColumn = elementBelow?.closest('.kanban-column');
+        
+        if (targetColumn) {
+            // Remove previous highlights
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            
+            // Check if touch is within column bounds with padding
+            const columnRect = targetColumn.getBoundingClientRect();
+            const padding = 30; // Larger padding for touch
+            
+            if (touch.clientX >= columnRect.left - padding && 
+                touch.clientX <= columnRect.right + padding &&
+                touch.clientY >= columnRect.top - padding && 
+                touch.clientY <= columnRect.bottom + padding) {
+                
+                targetColumn.classList.add('drag-over');
+                
+                // Position placeholder
+                const itemList = targetColumn.querySelector('.item-list');
+                const afterElement = this.getDragAfterElement(itemList, touch.clientY);
+                
+                if (afterElement == null) {
+                    itemList.appendChild(this.dragState.placeholder);
+                } else {
+                    itemList.insertBefore(this.dragState.placeholder, afterElement);
+                }
+            }
+        }
+    }
+    
+    handleTouchEnd(e) {
+        clearTimeout(this.dragState.touchStartTimeout);
+        
+        if (!this.dragState.isDragging) return;
+        
+        const touch = e.changedTouches[0];
+        const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetColumn = elementBelow?.closest('.kanban-column');
+        
+        if (targetColumn) {
+            // Check if touch ended within valid drop zone
+            const columnRect = targetColumn.getBoundingClientRect();
+            const padding = 30;
+            
+            if (touch.clientX >= columnRect.left - padding && 
+                touch.clientX <= columnRect.right + padding &&
+                touch.clientY >= columnRect.top - padding && 
+                touch.clientY <= columnRect.bottom + padding) {
+                
+                // Simulate drop
+                const fakeDropEvent = {
+                    preventDefault: () => {},
+                    target: targetColumn
+                };
+                this.handleDrop(fakeDropEvent);
+            }
+        }
+        
+        // Clean up touch drag state
+        this.dragState.draggedElement?.classList.remove('touch-dragging');
+        document.body.classList.remove('touch-dragging-active');
+        document.body.style.overflow = '';
+        
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        
+        this.removePlaceholder();
+        
+        setTimeout(() => {
+            this.resetDragState();
+        }, 200);
+    }
+    
+    createPlaceholder() {
+        if (this.dragState.placeholder) return;
+        
+        this.dragState.placeholder = document.createElement('li');
+        this.dragState.placeholder.className = 'kanban-item placeholder';
+        this.dragState.placeholder.innerHTML = '<div class="placeholder-content">Drop here</div>';
+    }
+    
+    removePlaceholder() {
+        if (this.dragState.placeholder && this.dragState.placeholder.parentNode) {
+            this.dragState.placeholder.parentNode.removeChild(this.dragState.placeholder);
+        }
+        this.dragState.placeholder = null;
+    }
+    
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.kanban-item:not(.dragging):not(.placeholder)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    
+    resetDragState() {
+        this.dragState.isDragging = false;
+        this.dragState.draggedElement = null;
+        this.dragState.draggedFromColumn = null;
+        this.dragState.draggedItemId = null;
+        this.dragState.placeholder = null;
+    }
+    
+    showAddForm(columnId) {
+        this.hideAllAddForms();
+        
         const form = document.getElementById(`add-form-${columnId}`);
         const input = document.getElementById(`add-input-${columnId}`);
+        const button = document.querySelector(`[data-column="${columnId}"].add-item-btn`);
         
-        if (button && form && input) {
-            form.style.display = 'none';
-            button.style.display = 'flex';
-            input.value = '';
+        form.style.display = 'block';
+        button.style.display = 'none';
+        
+        setTimeout(() => {
+            input.focus();
+            this.autoResizeTextarea(input);
+        }, 100);
+    }
+    
+    hideAddForm(columnId) {
+        const form = document.getElementById(`add-form-${columnId}`);
+        const input = document.getElementById(`add-input-${columnId}`);
+        const button = document.querySelector(`[data-column="${columnId}"].add-item-btn`);
+        
+        form.style.display = 'none';
+        button.style.display = 'flex';
+        input.value = '';
+        this.autoResizeTextarea(input);
+    }
+    
+    hideAllAddForms() {
+        for (let i = 0; i < this.columns.length; i++) {
+            this.hideAddForm(i);
         }
     }
     
@@ -146,346 +587,185 @@ class BulletproofKanban {
         const input = document.getElementById(`add-input-${columnId}`);
         const text = input.value.trim();
         
-        if (text) {
-            const newItem = {
-                id: ++this.itemIdCounter,
-                text: text,
-                timestamp: Date.now()
-            };
-            
-            this.columns[columnId].items.push(newItem);
-            this.hideAddForm(columnId);
-            this.render();
-            this.saveToStorage();
-            this.showToast('Order added successfully!');
+        if (!text) {
+            this.showToast('Please enter order details', 'warning');
+            input.focus();
+            return;
         }
+        
+        const newItem = {
+            id: this.generateId(),
+            text: text,
+            timestamp: Date.now()
+        };
+        
+        this.columns[columnId].items.push(newItem);
+        this.saveToStorage();
+        this.render();
+        this.hideAddForm(columnId);
+        
+        this.showToast('Order added successfully', 'success');
     }
     
     deleteItem(columnId, itemId) {
         const column = this.columns[columnId];
-        column.items = column.items.filter(item => item.id !== itemId);
-        this.render();
-        this.saveToStorage();
-        this.showToast('Order deleted');
+        const itemIndex = column.items.findIndex(item => item.id === itemId);
+        
+        if (itemIndex !== -1) {
+            column.items.splice(itemIndex, 1);
+            this.saveToStorage();
+            this.render();
+            this.showToast('Order deleted', 'success');
+        }
+    }
+    
+    handleItemEdit(element) {
+        const item = element.closest('.kanban-item');
+        const column = item.closest('.kanban-column');
+        const columnId = parseInt(column.dataset.column);
+        const itemId = parseInt(item.dataset.itemId);
+        
+        const columnData = this.columns[columnId];
+        const itemData = columnData.items.find(item => item.id === itemId);
+        
+        if (itemData) {
+            itemData.text = element.textContent.trim();
+            itemData.timestamp = Date.now();
+            
+            // Debounced save
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = setTimeout(() => {
+                this.saveToStorage();
+            }, 1000);
+        }
+    }
+    
+    autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
     }
     
     clearBoard() {
-        if (confirm('Are you sure you want to clear all orders? This cannot be undone.')) {
-            this.columns.forEach(column => {
-                column.items = [];
-            });
-            this.render();
-            this.saveToStorage();
-            this.showToast('Board cleared');
-        }
+        if (!confirm('Are you sure you want to clear all orders? This action cannot be undone.')) return;
+        
+        this.columns.forEach(column => {
+            column.items = [];
+        });
+        
+        this.saveToStorage();
+        this.render();
+        this.showToast('Board cleared', 'success');
     }
     
     exportData() {
         const data = {
-            columns: this.columns,
             exportDate: new Date().toISOString(),
-            version: '2.0'
+            columns: this.columns.map(col => ({
+                name: col.title,
+                items: col.items.map(item => ({
+                    text: item.text,
+                    timestamp: new Date(item.timestamp).toISOString()
+                }))
+            }))
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dl-orders-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `kanban-export-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        this.showToast('Data exported successfully!');
-    }
-    
-    // BULLETPROOF DRAG AND DROP IMPLEMENTATION
-    addDragEvents(element, itemId, columnId) {
-        element.draggable = true;
-        element.dataset.itemId = itemId;
-        element.dataset.column = columnId;
-        
-        // Desktop drag events with bulletproof error handling
-        element.addEventListener('dragstart', (e) => {
-            try {
-                this.isDragging = true;
-                this.draggedElement = element;
-                this.draggedItem = { id: itemId, columnId: columnId };
-                element.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', ''); // Required for some browsers
-                console.log('Drag started:', itemId, 'from column', columnId);
-            } catch (error) {
-                console.error('Drag start error:', error);
-                this.resetDragState();
-            }
-        });
-        
-        element.addEventListener('dragend', (e) => {
-            try {
-                element.classList.remove('dragging');
-                this.resetDragState();
-                console.log('Drag ended');
-            } catch (error) {
-                console.error('Drag end error:', error);
-                this.resetDragState();
-            }
-        });
-        
-        // BULLETPROOF MOBILE TOUCH EVENTS
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchCurrentX = 0;
-        let touchCurrentY = 0;
-        let longPressTimer = null;
-        
-        element.addEventListener('touchstart', (e) => {
-            try {
-                this.touchStartTime = Date.now();
-                this.touchMoved = false;
-                
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
-                touchCurrentX = touch.clientX;
-                touchCurrentY = touch.clientY;
-                
-                // Long press detection for drag initiation
-                longPressTimer = setTimeout(() => {
-                    if (!this.touchMoved) {
-                        this.initiateTouchDrag(element, itemId, columnId);
-                    }
-                }, 300);
-                
-            } catch (error) {
-                console.error('Touch start error:', error);
-                this.resetDragState();
-            }
-        }, { passive: false });
-        
-        element.addEventListener('touchmove', (e) => {
-            try {
-                const touch = e.touches[0];
-                touchCurrentX = touch.clientX;
-                touchCurrentY = touch.clientY;
-                
-                const deltaX = Math.abs(touchCurrentX - touchStartX);
-                const deltaY = Math.abs(touchCurrentY - touchStartY);
-                
-                if (deltaX > 10 || deltaY > 10) {
-                    this.touchMoved = true;
-                    clearTimeout(longPressTimer);
-                }
-                
-                if (this.isDragging) {
-                    e.preventDefault();
-                    this.handleTouchDrag(touch.clientX, touch.clientY);
-                }
-                
-            } catch (error) {
-                console.error('Touch move error:', error);
-            }
-        }, { passive: false });
-        
-        element.addEventListener('touchend', (e) => {
-            try {
-                clearTimeout(longPressTimer);
-                
-                if (this.isDragging) {
-                    const touch = e.changedTouches[0];
-                    this.completeTouchDrag(touch.clientX, touch.clientY);
-                }
-                
-                this.resetDragState();
-                
-            } catch (error) {
-                console.error('Touch end error:', error);
-                this.resetDragState();
-            }
-        }, { passive: false });
-        
-        element.addEventListener('touchcancel', () => {
-            try {
-                clearTimeout(longPressTimer);
-                this.resetDragState();
-            } catch (error) {
-                console.error('Touch cancel error:', error);
-                this.resetDragState();
-            }
-        });
-    }
-    
-    initiateTouchDrag(element, itemId, columnId) {
-        this.isDragging = true;
-        this.draggedElement = element;
-        this.draggedItem = { id: itemId, columnId: columnId };
-        element.classList.add('dragging', 'touch-dragging');
-        
-        // Add visual feedback to all drop zones
-        document.querySelectorAll('.item-list').forEach(list => {
-            list.classList.add('touch-drop-zone');
-        });
-        
-        console.log('Touch drag initiated:', itemId, 'from column', columnId);
-    }
-    
-    handleTouchDrag(x, y) {
-        // Update visual feedback
-        const elementBelow = document.elementFromPoint(x, y);
-        const dropZone = elementBelow?.closest('.item-list');
-        
-        // Remove previous highlights
-        document.querySelectorAll('.item-list').forEach(list => {
-            list.classList.remove('drag-over');
-        });
-        
-        // Highlight current drop zone
-        if (dropZone) {
-            dropZone.classList.add('drag-over');
-        }
-    }
-    
-    completeTouchDrag(x, y) {
-        const elementBelow = document.elementFromPoint(x, y);
-        const dropZone = elementBelow?.closest('.item-list');
-        
-        if (dropZone && this.draggedItem) {
-            const targetColumnId = parseInt(dropZone.dataset.column);
-            const sourceColumnId = this.draggedItem.columnId;
-            
-            if (targetColumnId !== sourceColumnId) {
-                this.moveItem(sourceColumnId, targetColumnId, this.draggedItem.id);
-            }
-        }
-        
-        // Clean up visual feedback
-        document.querySelectorAll('.item-list').forEach(list => {
-            list.classList.remove('drag-over', 'touch-drop-zone');
-        });
-    }
-    
-    resetDragState() {
-        this.isDragging = false;
-        this.draggedElement = null;
-        this.draggedItem = null;
-        this.sourceColumn = null;
-        
-        // Clean up all visual states
-        document.querySelectorAll('.kanban-item').forEach(item => {
-            item.classList.remove('dragging', 'touch-dragging');
-        });
-        
-        document.querySelectorAll('.item-list').forEach(list => {
-            list.classList.remove('drag-over', 'touch-drop-zone');
-        });
-    }
-    
-    // Setup bulletproof drop zones
-    setupDropZones() {
-        document.querySelectorAll('.item-list').forEach(list => {
-            // Remove existing listeners to prevent duplicates
-            list.removeEventListener('dragover', this.handleDragOver);
-            list.removeEventListener('dragleave', this.handleDragLeave);
-            list.removeEventListener('drop', this.handleDrop);
-            
-            // Add bulletproof listeners
-            list.addEventListener('dragover', (e) => this.handleDragOver(e, list));
-            list.addEventListener('dragleave', (e) => this.handleDragLeave(e, list));
-            list.addEventListener('drop', (e) => this.handleDrop(e, list));
-        });
-    }
-    
-    handleDragOver(e, list) {
-        try {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            list.classList.add('drag-over');
-        } catch (error) {
-            console.error('Drag over error:', error);
-        }
-    }
-    
-    handleDragLeave(e, list) {
-        try {
-            // Only remove if actually leaving the list
-            if (!list.contains(e.relatedTarget)) {
-                list.classList.remove('drag-over');
-            }
-        } catch (error) {
-            console.error('Drag leave error:', error);
-        }
-    }
-    
-    handleDrop(e, list) {
-        try {
-            e.preventDefault();
-            list.classList.remove('drag-over');
-            
-            if (this.draggedItem) {
-                const targetColumnId = parseInt(list.dataset.column);
-                const sourceColumnId = this.draggedItem.columnId;
-                
-                if (targetColumnId !== sourceColumnId) {
-                    this.moveItem(sourceColumnId, targetColumnId, this.draggedItem.id);
-                }
-            }
-        } catch (error) {
-            console.error('Drop error:', error);
-        }
-    }
-    
-    moveItem(fromColumnId, toColumnId, itemId) {
-        try {
-            const fromColumn = this.columns[fromColumnId];
-            const toColumn = this.columns[toColumnId];
-            
-            const itemIndex = fromColumn.items.findIndex(item => item.id === itemId);
-            if (itemIndex !== -1) {
-                const item = fromColumn.items.splice(itemIndex, 1)[0];
-                toColumn.items.push(item);
-                
-                this.render();
-                this.saveToStorage();
-                this.showToast(`Order moved to ${toColumn.title}`);
-                console.log(`Item ${itemId} moved from ${fromColumn.title} to ${toColumn.title}`);
-            }
-        } catch (error) {
-            console.error('Move item error:', error);
-            this.showToast('Error moving item. Please try again.');
-        }
+        this.showToast('Data exported successfully', 'success');
     }
     
     render() {
-        try {
-            this.columns.forEach((column, columnId) => {
-                const list = document.getElementById(`item-list-${columnId}`);
-                const count = document.getElementById(`count-${columnId}`);
-                
-                if (list && count) {
-                    list.innerHTML = '';
-                    count.textContent = column.items.length;
-                    
-                    column.items.forEach(item => {
-                        const li = document.createElement('li');
-                        li.className = 'kanban-item';
-                        li.innerHTML = `
-                            <button class="item-delete-btn" data-item-id="${item.id}" data-column="${columnId}">×</button>
-                            <div class="item-content">${this.escapeHtml(item.text)}</div>
-                            <div class="item-timestamp">${this.formatTimestamp(item.timestamp)}</div>
-                        `;
-                        
-                        this.addDragEvents(li, item.id, columnId);
-                        list.appendChild(li);
-                    });
-                }
-            });
-            
-            this.setupDropZones();
-        } catch (error) {
-            console.error('Render error:', error);
-            this.showToast('Error rendering board. Please refresh the page.');
-        }
+        this.columns.forEach((column, index) => {
+            this.renderColumn(index);
+        });
+    }
+    
+    renderColumn(columnId) {
+        const column = this.columns[columnId];
+        const itemList = document.getElementById(`item-list-${columnId}`);
+        const countElement = document.getElementById(`count-${columnId}`);
+        
+        // Update count
+        countElement.textContent = column.items.length;
+        
+        // Clear and rebuild items
+        itemList.innerHTML = '';
+        
+        column.items.forEach(item => {
+            const itemElement = this.createItemElement(item, columnId);
+            itemList.appendChild(itemElement);
+        });
+        
+        // Update column height
+        this.updateColumnHeight(columnId);
+    }
+    
+    createItemElement(item, columnId) {
+        const li = document.createElement('li');
+        li.className = 'kanban-item';
+        li.draggable = true;
+        li.dataset.itemId = item.id;
+        li.setAttribute('role', 'listitem');
+        li.setAttribute('tabindex', '0');
+        
+        const timeAgo = this.getTimeAgo(item.timestamp);
+        
+        li.innerHTML = `
+            <div class="item-content">
+                <button class="item-delete-btn windows-style" aria-label="Delete order" title="Delete order">
+                    <span class="delete-icon">×</span>
+                </button>
+                <div class="item-text kanban-item-text" contenteditable="true" role="textbox" aria-label="Edit order details">${this.escapeHtml(item.text)}</div>
+                <div class="item-meta">
+                    <span class="item-time" title="${new Date(item.timestamp).toLocaleString()}">${timeAgo}</span>
+                </div>
+            </div>
+        `;
+        
+        return li;
+    }
+    
+    updateColumnHeight(columnId) {
+        const column = document.querySelector(`[data-column="${columnId}"]`);
+        const content = column.querySelector('.column-content');
+        
+        // Calculate available height
+        const header = column.querySelector('.column-header');
+        const footer = column.querySelector('.column-footer');
+        const headerHeight = header.offsetHeight;
+        const footerHeight = footer.offsetHeight;
+        const columnHeight = column.offsetHeight;
+        
+        const availableHeight = columnHeight - headerHeight - footerHeight - 20; // 20px for padding
+        content.style.height = `${Math.max(availableHeight, 200)}px`;
+    }
+    
+    handleResize() {
+        // Update column heights on resize
+        this.columns.forEach((_, index) => {
+            this.updateColumnHeight(index);
+        });
+    }
+    
+    getTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (days > 0) return `${days}d ago`;
+        if (hours > 0) return `${hours}h ago`;
+        if (minutes > 0) return `${minutes}m ago`;
+        return 'Just now';
     }
     
     escapeHtml(text) {
@@ -494,51 +774,41 @@ class BulletproofKanban {
         return div.innerHTML;
     }
     
-    formatTimestamp(timestamp) {
-        try {
-            const now = Date.now();
-            const diff = now - timestamp;
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(diff / 3600000);
-            const days = Math.floor(diff / 86400000);
-            
-            if (minutes < 1) return 'Just now';
-            if (minutes < 60) return `${minutes}m ago`;
-            if (hours < 24) return `${hours}h ago`;
-            if (days < 7) return `${days}d ago`;
-            return new Date(timestamp).toLocaleDateString();
-        } catch (error) {
-            console.error('Format timestamp error:', error);
-            return 'Unknown';
+    showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-message">${this.escapeHtml(message)}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        // Limit number of toasts
+        const toasts = container.querySelectorAll('.toast');
+        if (toasts.length > 3) {
+            toasts[0].remove();
         }
     }
     
-    showToast(message) {
-        try {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            
-            container.appendChild(toast);
-            
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 10);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (container.contains(toast)) {
-                        container.removeChild(toast);
-                    }
-                }, 300);
-            }, 3000);
-        } catch (error) {
-            console.error('Toast error:', error);
-        }
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
     
     saveToStorage() {
@@ -546,51 +816,46 @@ class BulletproofKanban {
             const data = {
                 columns: this.columns,
                 itemIdCounter: this.itemIdCounter,
-                version: '2.0'
+                lastSaved: Date.now()
             };
-            localStorage.setItem('dl-order-tracker', JSON.stringify(data));
+            localStorage.setItem('kanban_enhanced_data', JSON.stringify(data));
         } catch (error) {
-            console.error('Save to storage error:', error);
-            this.showToast('Error saving data. Changes may be lost.');
+            console.error('Failed to save to localStorage:', error);
+            this.showToast('Failed to save data', 'error');
         }
     }
     
-    loadFromStorage() {
+    async loadFromStorage() {
         try {
-            const data = localStorage.getItem('dl-order-tracker');
-            if (data) {
-                const parsed = JSON.parse(data);
-                if (parsed.columns && Array.isArray(parsed.columns)) {
-                    this.columns = parsed.columns;
-                    this.itemIdCounter = parsed.itemIdCounter || 0;
-                    console.log('Data loaded from storage');
-                }
+            const saved = localStorage.getItem('kanban_enhanced_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                this.columns = data.columns || this.columns;
+                this.itemIdCounter = data.itemIdCounter || 0;
             }
         } catch (error) {
-            console.error('Load from storage error:', error);
-            this.showToast('Error loading saved data. Starting fresh.');
+            console.error('Failed to load from localStorage:', error);
+            this.showToast('Failed to load saved data', 'warning');
         }
     }
 }
 
-// BULLETPROOF INITIALIZATION WITH ERROR HANDLING
+// Initialize the Kanban board when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        console.log('Bulletproof Kanban v2.0 - Initializing...');
-        window.kanban = new BulletproofKanban();
-        console.log('Bulletproof Kanban v2.0 - Ready!');
-    } catch (error) {
-        console.error('Initialization error:', error);
-        alert('Error initializing the application. Please refresh the page.');
+    window.kanbanBoard = new KanbanBoard();
+});
+
+// Handle page visibility changes to save data
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && window.kanbanBoard) {
+        window.kanbanBoard.saveToStorage();
     }
 });
 
-// Additional error handling for unhandled errors
-window.addEventListener('error', (e) => {
-    console.error('Global error:', e.error);
-});
-
-window.addEventListener('unhandledrejection', (e) => {
-    console.error('Unhandled promise rejection:', e.reason);
+// Handle beforeunload to save data
+window.addEventListener('beforeunload', () => {
+    if (window.kanbanBoard) {
+        window.kanbanBoard.saveToStorage();
+    }
 });
 

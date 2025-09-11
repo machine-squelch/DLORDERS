@@ -15,7 +15,7 @@
     --ready-pickup-light: #06b6d4;
     
     /* Earth-tone Base Colors */
-    --bg-primary: #0c1810;         /* Deep forest */
+    --bg-primary: #231f20;         /* Deep forest */
     --bg-secondary: #1a2e1a;       /* Rich earth */
     --bg-tertiary: #2d4a2d;        /* Natural green */
     --text-primary: #f0fdf4;       /* Light green tint */
@@ -39,7 +39,7 @@
     --transition-slow: 0.5s ease;
     
     /* Spacing */
-    --header-height: clamp(100px, 15vh, 140px);
+    --header-height: 120px;
     --gap-xs: 0.25rem;
     --gap-sm: 0.5rem;
     --gap-md: 1rem;
@@ -128,8 +128,7 @@ body::before {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 /* Header Section */
@@ -139,7 +138,7 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0 var(--gap-xl);
+    padding: var(--gap-md) var(--gap-xl);
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--glass-border);
@@ -246,8 +245,7 @@ body::before {
 .kanban-container {
     flex: 1;
     padding: var(--gap-lg);
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -257,7 +255,7 @@ body::before {
     grid-template-columns: repeat(5, 1fr);
     gap: var(--gap-lg);
     height: 100%;
-    overflow: visible;
+    overflow: hidden;
 }
 
 /* Kanban Columns - Dynamic Full Height */
@@ -417,50 +415,12 @@ body::before {
     transform: rotate(2deg) scale(1.02);
     box-shadow: var(--shadow-xl);
     z-index: 1000;
-    opacity: 0.8;
 }
 
 .kanban-item.touch-dragging {
-    opacity: 0.9;
+    opacity: 0.8;
     transform: scale(1.05);
     z-index: 1000;
-    background: rgba(16, 185, 129, 0.2);
-    border-color: var(--ready-to-pick);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
-}
-
-/* Improved drop zone feedback */
-.item-list.drag-over {
-    background: rgba(16, 185, 129, 0.1);
-    border: 2px dashed var(--ready-to-pick);
-    border-radius: 8px;
-    transform: scale(1.02);
-    transition: all 0.2s ease;
-}
-
-/* Better mobile touch targets */
-@media (max-width: 768px) {
-    .kanban-item {
-        padding: 1rem;
-        margin-bottom: 0.75rem;
-        min-height: 60px;
-        touch-action: none; /* Prevent scrolling during drag */
-    }
-    
-    .kanban-item:active,
-    .kanban-item.dragging,
-    .kanban-item.touch-dragging {
-        transform: scale(1.08);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    .item-delete-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
-        top: 8px;
-        right: 8px;
-    }
 }
 
 /* Placeholder */

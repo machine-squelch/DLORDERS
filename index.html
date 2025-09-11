@@ -10,24 +10,6 @@
     <link rel="stylesheet" href="style.css">
     <meta name="description" content="Professional Kanban board for agricultural supply tracking and workflow management">
     <meta name="theme-color" content="#1e293b">
-    
-    <!-- Digital Ocean Debug Script -->
-    <script>
-        console.log('DL Order Tracker - Loading...');
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded');
-            // Ensure app loads even if there are timing issues
-            setTimeout(function() {
-                const appContainer = document.getElementById('app-container');
-                const loadingIndicator = document.getElementById('loading-indicator');
-                if (appContainer && loadingIndicator) {
-                    console.log('Showing app container');
-                    appContainer.style.display = 'flex';
-                    loadingIndicator.style.display = 'none';
-                }
-            }, 100);
-        });
-    </script>
 </head>
 <body>
     <!-- Loading indicator -->
@@ -84,7 +66,7 @@
                             <textarea 
                                 class="add-item-input" 
                                 id="add-input-0"
-                                placeholder="DL Order Number&#10;Customer Name"
+                                placeholder="Supply Order #AG-12345 - Product Description"
                                 rows="2"
                                 aria-label="Enter supply order details"></textarea>
                             <div class="form-actions">
@@ -123,9 +105,9 @@
                             <textarea 
                                 class="add-item-input" 
                                 id="add-input-1"
-                                placeholder="DL Order Number&#10;Customer Name"
+                                placeholder="Supply Order #AG-12345 - Product Description"
                                 rows="2"
-                                aria-label="Customer Name"></textarea>
+                                aria-label="Enter supply order details"></textarea>
                             <div class="form-actions">
                                 <button class="save-btn" data-column="1">Save</button>
                                 <button class="cancel-btn" data-column="1">Cancel</button>
@@ -162,7 +144,7 @@
                             <textarea 
                                 class="add-item-input" 
                                 id="add-input-2"
-                                placeholder="DL Order Number&#10;Customer Name"
+                                placeholder="Supply Order #AG-12345 - Product Description"
                                 rows="2"
                                 aria-label="Enter supply order details"></textarea>
                             <div class="form-actions">
@@ -201,7 +183,7 @@
                             <textarea 
                                 class="add-item-input" 
                                 id="add-input-3"
-                                placeholder="DL Order Number&#10;Customer Name"
+                                placeholder="Supply Order #AG-12345 - Product Description"
                                 rows="2"
                                 aria-label="Enter supply order details"></textarea>
                             <div class="form-actions">
@@ -240,7 +222,7 @@
                             <textarea 
                                 class="add-item-input" 
                                 id="add-input-4"
-                                placeholder="DL Order Number&#10;Customer Name"
+                                placeholder="Supply Order #AG-12345 - Product Description"
                                 rows="2"
                                 aria-label="Enter order details"></textarea>
                             <div class="form-actions">
