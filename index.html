@@ -8,12 +8,12 @@
     <link rel="shortcut icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     <link rel="stylesheet" href="style.css">
-    <meta name="description" content="Professional Kanban board for order and workflow management">
+    <meta name="description" content="Professional Kanban board for agricultural supply tracking and workflow management">
     <meta name="theme-color" content="#1e293b">
     
     <!-- Digital Ocean Debug Script -->
     <script>
-        console.log(Order Tracker - Loading...');
+        console.log('DL Order Tracker - Loading...');
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded');
             // Ensure app loads even if there are timing issues
@@ -78,7 +78,7 @@
                     <footer class="column-footer">
                         <button class="add-item-btn" data-column="0" aria-label="Add new order to Ready to Pick">
                             <span class="plus-icon">+</span>
-                            <span>New Order</span>
+                            <span>Add Order</span>
                         </button>
                         <div class="add-item-form" id="add-form-0" style="display: none;">
                             <textarea 
@@ -125,7 +125,7 @@
                                 id="add-input-1"
                                 placeholder="DL Order Number&#10;Customer Name"
                                 rows="2"
-                                aria-label="Enter supply order details"></textarea>
+                                aria-label="Customer Name"></textarea>
                             <div class="form-actions">
                                 <button class="save-btn" data-column="1">Save</button>
                                 <button class="cancel-btn" data-column="1">Cancel</button>
